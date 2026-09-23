@@ -1,0 +1,403 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Awaz AI — Neural Voice Assistant</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+:root {
+  --bg: #080910; --s1: #0f1018; --s2: #171824; --border: #2a2d45;
+  --blue: #5b8ef5; --purple: #9b7ff4; --green: #3dd68c; --gold: #f5c842;
+  --red: #f06060; --text: #e8eaff; --dim: #9095bb; --faint: #3a3d55;
+}
+body { font-family: 'DM Sans', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; overflow-x: hidden; }
+.bg-glow { position: fixed; inset: 0; pointer-events: none; z-index: 0; background: radial-gradient(ellipse 40% 40% at 20% 10%, rgba(91,142,245,.09) 0%, transparent 70%), radial-gradient(ellipse 35% 35% at 80% 90%, rgba(155,127,244,.08) 0%, transparent 70%); }
+.wrap { position: relative; z-index: 1; max-width: 620px; margin: 0 auto; padding: 1.5rem 1rem 4rem; display: flex; flex-direction: column; align-items: center; gap: 1rem; }
+.topbar { width: 100%; display: flex; align-items: center; justify-content: space-between; }
+.clock { background: var(--s1); border: 1px solid var(--border); border-radius: 10px; padding: 7px 16px; }
+.clock-t { font-family: 'DM Mono', monospace; font-size: 16px; font-weight: 500; }
+.clock-d { font-size: 10px; color: var(--dim); margin-top: 1px; }
+.sm-btn { font-size: 11px; font-weight: 500; color: var(--dim); background: var(--s1); border: 1px solid var(--border); border-radius: 7px; padding: 5px 12px; cursor: pointer; transition: .2s; }
+.sm-btn:hover { border-color: var(--blue); color: var(--blue); }
+.header { text-align: center; }
+.logo { display: inline-flex; align-items: center; gap: 10px; }
+.logo-ic { width: 44px; height: 44px; border-radius: 14px; background: linear-gradient(135deg, var(--blue), var(--purple)); display: flex; align-items: center; justify-content: center; font-size: 22px; }
+.logo-text { font-size: 26px; font-weight: 700; background: linear-gradient(135deg, var(--blue), var(--purple)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+.logo-badge { font-size: 10px; font-weight: 600; color: var(--green); background: rgba(61,214,140,.1); border: 1px solid rgba(61,214,140,.25); border-radius: 5px; padding: 2px 7px; }
+.tagline { font-size: 13px; color: var(--dim); margin-top: 5px; }
+.status { display: flex; align-items: center; gap: 8px; background: var(--s1); border: 1px solid var(--border); border-radius: 999px; padding: 5px 16px; font-size: 12px; color: var(--dim); }
+.status.listen { border-color: var(--blue); color: var(--blue); background: rgba(91,142,245,.07); }
+.status.speak { border-color: var(--purple); color: var(--purple); background: rgba(155,127,244,.07); }
+.status.think { border-color: var(--gold); color: var(--gold); background: rgba(245,200,66,.07); }
+.sdot { width: 7px; height: 7px; border-radius: 50%; background: currentColor; }
+.status.listen .sdot, .status.speak .sdot, .status.think .sdot { animation: blink .9s infinite; }
+@keyframes blink { 0%,100%{opacity:1} 50%{opacity:.1} }
+.mic-wrap { position: relative; display: flex; align-items: center; justify-content: center; }
+.pulse-ring { position: absolute; border-radius: 50%; border: 1px solid rgba(91,142,245,.15); animation: pulse 3s ease-out infinite; opacity: 0; }
+.pulse-ring.p1 { width: 140px; height: 140px; }
+.pulse-ring.p2 { width: 140px; height: 140px; animation-delay: 1s; }
+@keyframes pulse { 0%{transform:scale(.7);opacity:.6} 100%{transform:scale(1.6);opacity:0} }
+.mic-btn { width: 95px; height: 95px; border-radius: 50%; background: var(--s2); border: 2px solid var(--border); cursor: pointer; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; transition: all .3s cubic-bezier(.34,1.56,.64,1); position: relative; z-index: 1; user-select: none; }
+.mic-btn:hover { transform: scale(1.06); border-color: var(--blue); }
+.mic-btn.on { border-color: var(--blue); background: rgba(91,142,245,.12); box-shadow: 0 0 25px rgba(91,142,245,.3); }
+.mic-btn.say { border-color: var(--purple); background: rgba(155,127,244,.12); box-shadow: 0 0 25px rgba(155,127,244,.3); }
+.mic-icon { font-size: 28px; }
+.mic-lbl { font-size: 9px; font-weight: 600; color: var(--dim); letter-spacing: 1.5px; text-transform: uppercase; }
+#visualizer { width: 100%; height: 50px; border-radius: 10px; background: rgba(15, 16, 24, 0.4); border: 1px solid var(--border); }
+.chat-hd { width: 100%; display: flex; align-items: center; justify-content: space-between; }
+.chat-lbl { font-size: 10px; font-weight: 700; color: var(--dim); letter-spacing: 2px; text-transform: uppercase; }
+.chat-box { width: 100%; display: flex; flex-direction: column; gap: 10px; max-height: 280px; overflow-y: auto; padding-right: 4px; }
+.chat-box::-webkit-scrollbar { width: 3px; }
+.chat-box::-webkit-scrollbar-thumb { background: var(--faint); border-radius: 3px; }
+.bub { max-width: 90%; padding: .7rem 1rem; border-radius: 14px; font-size: 14px; line-height: 1.6; }
+.bub.me { align-self: flex-end; background: rgba(91,142,245,.13); border: 1px solid rgba(91,142,245,.25); border-bottom-right-radius: 3px; }
+.bub.ai { align-self: flex-start; background: var(--s2); border: 1px solid var(--border); border-bottom-left-radius: 3px; }
+.bub.act { align-self: flex-start; background: rgba(61,214,140,.07); border: 1px solid rgba(61,214,140,.25); border-bottom-left-radius: 3px; }
+.bub.err { align-self: flex-start; background: rgba(240,96,96,.07); border: 1px solid rgba(240,96,96,.25); border-bottom-left-radius: 3px; }
+.blbl { font-size: 10px; font-weight: 700; letter-spacing: 1.5px; text-transform: uppercase; opacity: .6; margin-bottom: 4px; }
+.bub.me .blbl { color: var(--blue); }
+.bub.ai .blbl { color: var(--purple); }
+.bub.act .blbl { color: var(--green); }
+.bub.err .blbl { color: var(--red); }
+.inp-row { width: 100%; display: flex; gap: 8px; }
+.inp { flex: 1; background: var(--s1); border: 1px solid var(--border); border-radius: 11px; padding: .65rem 1rem; font-size: 14px; color: var(--text); outline: none; }
+.inp:focus { border-color: var(--blue); }
+.inp-send { width: 44px; height: 44px; border-radius: 11px; flex-shrink: 0; background: linear-gradient(135deg, var(--blue), var(--purple)); border: none; cursor: pointer; font-size: 18px; color: #fff; }
+.sec-lbl { width: 100%; font-size: 10px; font-weight: 700; color: var(--dim); letter-spacing: 2px; text-transform: uppercase; }
+.grid { width: 100%; display: grid; grid-template-columns: 1fr 1fr; gap: 7px; }
+.qbtn { background: var(--s1); border: 1px solid var(--border); border-radius: 10px; padding: .55rem .85rem; font-size: 12.5px; color: var(--dim); cursor: pointer; display: flex; align-items: center; gap: 7px; }
+.qbtn:hover { border-color: var(--blue); color: var(--text); }
+.badge { font-size: 9px; font-weight: 700; padding: 2px 6px; border-radius: 5px; margin-left: auto; }
+.ba { background: rgba(61,214,140,.12); color: var(--green); border: 1px solid rgba(61,214,140,.25); }
+.bq { background: rgba(91,142,245,.12); color: var(--blue); border: 1px solid rgba(91,142,245,.25); }
+.bs { background: rgba(245,200,66,.12); color: var(--gold); border: 1px solid rgba(245,200,66,.25); }
+.settings { width: 100%; background: var(--s1); border: 1px solid var(--border); border-radius: 13px; padding: .85rem 1.1rem; display: flex; align-items: center; justify-content: space-between; }
+.tog { width: 38px; height: 21px; background: var(--border); border-radius: 999px; position: relative; cursor: pointer; transition: background .3s; }
+.tog.on { background: var(--blue); }
+.tok { width: 15px; height: 15px; background: #fff; border-radius: 50%; position: absolute; top: 3px; left: 3px; transition: left .28s; }
+.tog.on .tok { left: 20px; }
+</style>
+</head>
+<body>
+<div class="bg-glow"></div>
+<div class="wrap">
+  <div class="topbar">
+    <div class="clock">
+      <div class="clock-t" id="ct">00:00:00</div>
+      <div class="clock-d" id="cd">---</div>
+    </div>
+    <button class="sm-btn" onclick="clearChat()">🗑️ Clear</button>
+  </div>
+
+  <div class="header">
+    <div class="logo">
+      <div class="logo-ic">🎙️</div>
+      <div style="display:flex;align-items:baseline;gap:6px">
+        <span class="logo-text">Awaz</span>
+        <span class="logo-badge">Backend Connected</span>
+      </div>
+    </div>
+    <div class="tagline">Gemini Backend + Live Audio Visualizer + Utilities 🇵🇰</div>
+  </div>
+
+  <div class="status" id="statusEl">
+    <div class="sdot"></div>
+    <span id="statusTxt">Tayaar hoon — mic dabayein</span>
+  </div>
+
+  <div class="mic-wrap">
+    <div class="pulse-ring p1"></div>
+    <div class="pulse-ring p2"></div>
+    <div class="mic-btn" id="micBtn" onclick="toggleMic()">
+      <div class="mic-icon" id="micIco">🎤</div>
+      <div class="mic-lbl" id="micLbl">Tap karein</div>
+    </div>
+  </div>
+
+  <canvas id="visualizer"></canvas>
+
+  <div class="chat-hd">
+    <div class="chat-lbl">Guftagu & AI Brain</div>
+    <button class="sm-btn" onclick="clearChat()">🗑️ Saaf</button>
+  </div>
+  <div class="chat-box" id="chatBox"></div>
+
+  <div class="inp-row">
+    <input class="inp" id="textInp" placeholder="Kuch bhi poochein ya command dein..." onkeydown="if(event.key==='Enter')sendTyped()">
+    <button class="inp-send" onclick="sendTyped()">➤</button>
+  </div>
+
+  <div class="sec-lbl">⚡ Quick Smart Actions</div>
+  <div class="grid">
+    <button class="qbtn" onclick="askCustomPrompt()">🧠 Ask Gemini AI <span class="badge bs">AI</span></button>
+    <button class="qbtn" onclick="run('namaz time')">🕌 Namaz Timings <span class="badge ba">ISLAM</span></button>
+    <button class="qbtn" onclick="run('karachi ka mausam')">🌤️ Karachi Mausam <span class="badge bq">LIVE</span></button>
+    <button class="qbtn" onclick="run('dollar ka rate')">💵 Dollar Rate <span class="badge bq">LIVE</span></button>
+    <button class="qbtn" onclick="run('youtube open')">▶️ YouTube Direct <span class="badge ba">OPEN</span></button>
+    <button class="qbtn" onclick="run('google open')">🔍 Google Search <span class="badge ba">OPEN</span></button>
+  </div>
+
+  <div class="settings">
+    <span style="font-size:13px;color:var(--dim)">🔊 Awaaz jawab</span>
+    <div class="tog on" id="ttsToggle" onclick="toggleTTS()"><div class="tok"></div></div>
+  </div>
+</div>
+
+<script>
+function tick() {
+  const n = new Date();
+  document.getElementById('ct').textContent = [n.getHours(),n.getMinutes(),n.getSeconds()].map(x=>String(x).padStart(2,'0')).join(':');
+  const D = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+  const M = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  document.getElementById('cd').textContent = `${D[n.getDay()]} ${n.getDate()} ${M[n.getMonth()]} ${n.getFullYear()}`;
+}
+tick(); setInterval(tick, 1000);
+
+function st(txt, cls) {
+  const el = document.getElementById('statusEl');
+  el.className = 'status' + (cls ? ' '+cls : '');
+  document.getElementById('statusTxt').textContent = txt;
+}
+
+function bubble(html, type) {
+  const b = document.getElementById('chatBox');
+  const d = document.createElement('div');
+  d.className = 'bub ' + type;
+  const lbls = { me:'Aap', ai:'✦ Awaz (Gemini)', act:'⚡ Action', err:'⚠️ Masla' };
+  d.innerHTML = `<div class="blbl">${lbls[type]||'Awaz'}</div>${html}`;
+  b.appendChild(d);
+  setTimeout(() => b.scrollTop = b.scrollHeight, 50);
+}
+
+function clearChat() {
+  document.getElementById('chatBox').innerHTML = '';
+  bubble('Chat saaf! Kuch bhi bolein ya poochein. 😊', 'ai');
+}
+
+let ttsOn = true;
+function speak(text, callback) {
+  if (!ttsOn) { if (callback) callback(); return; }
+  window.speechSynthesis.cancel();
+  const clean = text.replace(/<[^>]*>/g, '').replace(/₨/g, 'rupaye').replace(/\*/g, '').substring(0, 200);
+  const u = new SpeechSynthesisUtterance(clean);
+  const voices = window.speechSynthesis.getVoices();
+  const urduVoice = voices.find(v => v.lang.includes('ur')) || voices.find(v => v.lang.includes('hi')) || voices.find(v => v.lang.includes('en-IN'));
+  if (urduVoice) { u.voice = urduVoice; u.lang = urduVoice.lang; } else { u.lang = 'ur-PK'; }
+  u.rate = 0.95;
+  document.getElementById('micBtn').classList.add('say');
+  st('Bol raha hoon...', 'speak');
+  let finished = false;
+  const finish = () => {
+    if (finished) return;
+    finished = true;
+    document.getElementById('micBtn').classList.remove('say');
+    st('Tayaar hoon — mic dabayein', '');
+    if (callback) callback();
+  };
+  u.onend = finish;
+  u.onerror = finish;
+  window.speechSynthesis.speak(u);
+  setTimeout(finish, 4000);
+}
+
+// Audio Visualizer
+let audioCtx, analyser, micStream, animId;
+const canvas = document.getElementById('visualizer');
+const canvasCtx = canvas.getContext('2d');
+
+function initVisualizer() {
+  canvas.width = canvas.offsetWidth || 500;
+  canvas.height = canvas.offsetHeight || 50;
+  drawIdleWaves();
+}
+
+function drawIdleWaves() {
+  canvasCtx.clearRect(0, 0, canvas.width, canvas.height);
+  canvasCtx.lineWidth = 1.5;
+  canvasCtx.strokeStyle = 'rgba(91, 142, 245, 0.2)';
+  canvasCtx.beginPath();
+  canvasCtx.moveTo(0, canvas.height / 2);
+  canvasCtx.lineTo(canvas.width, canvas.height / 2);
+  canvasCtx.stroke();
+}
+
+async function startAudioStream() {
+  try {
+    if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    if (audioCtx.state === 'suspended') await audioCtx.resume();
+    micStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+    const source = audioCtx.createMediaStreamSource(micStream);
+    analyser = audioCtx.createAnalyser();
+    analyser.fftSize = 128;
+    source.connect(analyser);
+    const bufferLength = analyser.frequencyBinCount;
+    const dataArray = new Uint8Array(bufferLength);
+
+    function renderFrame() {
+      animId = requestAnimationFrame(renderFrame);
+      analyser.getByteFrequencyData(dataArray);
+      canvasCtx.clearRect(0, 0, canvas.width, canvas.height);
+      const barWidth = (canvas.width / bufferLength) * 2;
+      let x = 0;
+      for (let i = 0; i < bufferLength; i++) {
+        const barHeight = (dataArray[i] / 255) * canvas.height;
+        const grad = canvasCtx.createLinearGradient(0, canvas.height, 0, 0);
+        grad.addColorStop(0, '#5b8ef5');
+        grad.addColorStop(1, '#9b7ff4');
+        canvasCtx.fillStyle = grad;
+        canvasCtx.fillRect(x, canvas.height - barHeight, barWidth - 1, barHeight);
+        x += barWidth;
+      }
+    }
+    renderFrame();
+  } catch(e) { console.warn('Visualizer warning:', e); }
+}
+
+function stopAudioStream() {
+  if (animId) cancelAnimationFrame(animId);
+  if (micStream) {
+    micStream.getTracks().forEach(t => t.stop());
+    micStream = null;
+  }
+  drawIdleWaves();
+}
+
+// Backend API Calls
+async function askGemini(promptText) {
+  st('Gemini AI soch raha hai...', 'think');
+  try {
+    const res = await fetch('/api/ask', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ prompt: promptText })
+    });
+    const data = await res.json();
+    if (res.ok && data.reply) {
+      bubble(data.reply, 'ai');
+      speak(data.reply);
+    } else {
+      bubble(`⚠️ ${data.error || 'Server error aagaya'}`, 'err');
+      speak('Masla aagaya, dobara koshish karein.');
+    }
+  } catch (err) {
+    bubble('⚠️ Backend server se rabta nahi ho saka.', 'err');
+  }
+  st('Tayaar hoon — mic dabayein', '');
+}
+
+async function run(text) {
+  if (!text.trim()) return;
+  bubble(text, 'me');
+  const raw = text.toLowerCase().trim();
+
+  if (raw.includes('youtube')) {
+    bubble('▶️ <strong>YouTube</strong> khul raha hai...', 'act');
+    window.location.href = 'https://www.youtube.com';
+    return;
+  }
+  if (raw.includes('google')) {
+    bubble('🔍 <strong>Google Search</strong> khul raha hai...', 'act');
+    window.location.href = 'https://www.google.com';
+    return;
+  }
+
+  if (raw.includes('namaz') || raw.includes('prayer') || raw.includes('azan')) {
+    try {
+      const res = await fetch('/api/namaz?city=Karachi');
+      const t = await res.json();
+      bubble(`🕌 <strong>Karachi Namaz Timings:</strong><br>• Fajr: <strong>${t.Fajr}</strong> | Dhuhr: <strong>${t.Dhuhr}</strong><br>• Asr: <strong>${t.Asr}</strong> | Maghrib: <strong>${t.Maghrib}</strong><br>• Isha: <strong>${t.Isha}</strong>`, 'ai');
+      speak('Karachi ke namaz auqaat yeh hain');
+      return;
+    } catch(e){}
+  }
+
+  if (raw.includes('mausam') || raw.includes('weather')) {
+    try {
+      const res = await fetch('/api/weather?lat=24.8607&lon=67.0011');
+      const w = await res.json();
+      bubble(`🌤️ <strong>Karachi Mausam:</strong><br>🌡️ Darja Hararat: <strong>${w.temperature}°C</strong><br>💨 Hawa: <strong>${w.windspeed} km/h</strong>`, 'ai');
+      speak('Karachi ka mausam check kar liya hai');
+      return;
+    } catch(e){}
+  }
+
+  if (raw.includes('dollar') || raw.includes('usd')) {
+    try {
+      const res = await fetch('/api/dollar');
+      const d = await res.json();
+      bubble(`💵 <strong>Dollar Rate:</strong><br>💰 1 USD = <strong>₨ ${d.pkr.toFixed(2)}</strong>`, 'ai');
+      speak('Dollar ka taza rate yeh raha');
+      return;
+    } catch(e){}
+  }
+
+  await askGemini(text);
+}
+
+// Mic Logic
+const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+let mic = null, isListening = false;
+
+function toggleMic() { isListening ? stopMic() : startMic(); }
+
+function startMic() {
+  if (!SR) { bubble('Browser speech support nahi karta. Chrome use karein.', 'err'); return; }
+  window.speechSynthesis.cancel();
+  mic = new SR();
+  mic.lang = 'ur-PK';
+  mic.interimResults = false;
+  mic.onstart = () => {
+    isListening = true;
+    startAudioStream();
+    document.getElementById('micBtn').classList.add('on');
+    document.getElementById('micIco').textContent = '🔴';
+    document.getElementById('micLbl').textContent = 'Sun raha...';
+    st('Boliye... Main sun raha hoon', 'listen');
+  };
+  mic.onresult = (e) => {
+    const text = e.results[0][0].transcript;
+    stopMic();
+    run(text);
+  };
+  mic.onerror = () => stopMic();
+  mic.onend = () => stopMic();
+  try { mic.start(); } catch(e) { stopMic(); }
+}
+
+function stopMic() {
+  isListening = false;
+  stopAudioStream();
+  if (mic) { try { mic.stop(); } catch(e){} mic = null; }
+  document.getElementById('micBtn').classList.remove('on');
+  document.getElementById('micIco').textContent = '🎤';
+  document.getElementById('micLbl').textContent = 'Tap karein';
+  st('Tayaar hoon — mic dabayein', '');
+}
+
+function sendTyped() {
+  const el = document.getElementById('textInp');
+  const v = el.value.trim();
+  if (!v) return;
+  el.value = '';
+  run(v);
+}
+
+function askCustomPrompt() {
+  const q = prompt("Gemini AI se kya poochna chahte hain?");
+  if (q && q.trim()) run(q.trim());
+}
+
+function toggleTTS() {
+  ttsOn = !ttsOn;
+  document.getElementById('ttsToggle').classList.toggle('on', ttsOn);
+}
+
+window.addEventListener('load', () => {
+  initVisualizer();
+  bubble(`Assalam o Alaikum! 🤖 <strong>Awaz Neural AI</strong> backend ke sath connected hai.<br><br>• <strong>Commands:</strong> Namaz, Mausam, Dollar rate, ya koi bhi sawal bolein.`, 'ai');
+});
+</script>
+</body>
+</html>
