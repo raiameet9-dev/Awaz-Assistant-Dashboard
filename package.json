@@ -1,0 +1,14 @@
+{
+  "name": "awaz-ai-assistant",
+  "version": "1.0.0",
+  "description": "Awaz AI Voice Assistant with Node.js Backend & Gemini API",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.5",
+    "express": "^4.19.2"
+  }
+}
