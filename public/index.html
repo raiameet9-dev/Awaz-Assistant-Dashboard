@@ -146,6 +146,8 @@ body { font-family: 'DM Sans', sans-serif; background: var(--bg); color: var(--t
 </div>
 
 <script>
+const BACKEND_URL = "https://awaz-assistant-dashboard-6ql5.vercel.app";
+
 function tick() {
   const n = new Date();
   document.getElementById('ct').textContent = [n.getHours(),n.getMinutes(),n.getSeconds()].map(x=>String(x).padStart(2,'0')).join(':');
@@ -268,24 +270,13 @@ function stopAudioStream() {
 async function askGemini(promptText) {
   st('Gemini AI soch raha hai...', 'think');
   try {
-   // Live Vercel Backend URL
-
-// 1. Gemini AI
- const BACKEND_URL = "[https://awaz-assistant-dashboard-6ql5.vercel.app](https://awaz-assistant-dashboard-6ql5.vercel.app)";
- 
- s
-// Examples:
-fetch(`${BACKEND_URL}/api/ask`, {
-  method: 'POST',
-  headers: { 'Content-Type': 'application/json' },
-  body: JSON.stringify({ prompt: userText })
-});
-
-fetch(`${BACKEND_URL}/api/dollar`);
-fetch(`${BACKEND_URL}/api/weather?lat=24.8607&lon=67.0011`);
-fetch(`${BACKEND_URL}/api/namaz?city=Karachi`);
+    const res = await fetch(`${BACKEND_URL}/api/ask`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ prompt: promptText })
+    });
     const data = await res.json();
-    if (res.ok && data.reply) {s
+    if (res.ok && data.reply) {
       bubble(data.reply, 'ai');
       speak(data.reply);
     } else {
@@ -316,7 +307,7 @@ async function run(text) {
 
   if (raw.includes('namaz') || raw.includes('prayer') || raw.includes('azan')) {
     try {
-      const res = await fetch('/api/namaz?city=Karachi');
+      const res = await fetch(`${BACKEND_URL}/api/namaz?city=Karachi`);
       const t = await res.json();
       bubble(`🕌 <strong>Karachi Namaz Timings:</strong><br>• Fajr: <strong>${t.Fajr}</strong> | Dhuhr: <strong>${t.Dhuhr}</strong><br>• Asr: <strong>${t.Asr}</strong> | Maghrib: <strong>${t.Maghrib}</strong><br>• Isha: <strong>${t.Isha}</strong>`, 'ai');
       speak('Karachi ke namaz auqaat yeh hain');
@@ -326,9 +317,9 @@ async function run(text) {
 
   if (raw.includes('mausam') || raw.includes('weather')) {
     try {
-      const res = await fetch('/api/weather?lat=24.8607&lon=67.0011');
+      const res = await fetch(`${BACKEND_URL}/api/weather?lat=24.8607&lon=67.0011`);
       const w = await res.json();
-      bubble(`🌤️ <strong>Karachi Mausam:</strong><br>🌡️ Darja Hararat: <strong>${w.temperature}°C</strong><br>💨 Hawa: <strong>${w.windspeed} km/h</strong>`, 'ai');
+      bubble(`🌤️️ <strong>Karachi Mausam:</strong><br>🌡️ Darja Hararat: <strong>${w.temperature}°C</strong><br>💨 Hawa: <strong>${w.windspeed} km/h</strong>`, 'ai');
       speak('Karachi ka mausam check kar liya hai');
       return;
     } catch(e){}
@@ -336,7 +327,7 @@ async function run(text) {
 
   if (raw.includes('dollar') || raw.includes('usd')) {
     try {
-      const res = await fetch('/api/dollar');
+      const res = await fetch(`${BACKEND_URL}/api/dollar`);
       const d = await res.json();
       bubble(`💵 <strong>Dollar Rate:</strong><br>💰 1 USD = <strong>₨ ${d.pkr.toFixed(2)}</strong>`, 'ai');
       speak('Dollar ka taza rate yeh raha');
