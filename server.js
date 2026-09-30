@@ -8,7 +8,7 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 
 
-GEMINI_API_KEY=AQ.Ab8RN6I9W9Dx1MNQwbj5YZkTNfsQLpdHPeAxHkAd3Hf10LkNCg
+const GEMINI_API_KEY = "AQ.Ab8RN6I9W9Dx1MNQwbj5YZkTNfsQLpdHPeAxHkAd3Hf10LkNCg";
 app.use(cors());
 app.use(express.json());
 app.use(express.static(path.join(__dirname, 'public')));
